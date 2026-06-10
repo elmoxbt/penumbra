@@ -266,18 +266,30 @@ pub struct Tick<'info> {
     )]
     pub schedule: Account<'info, VestSchedule>,
 
-    /// CHECK: verified against pinned UMBRA_PROGRAM_ID in the CPI
-    /// helper. Demonstrative only in this scaffold; production wires
-    /// via `anchor_lang::declare_program!` + IDL.
+    /// CHECK: address constraint enforces the pinned UMBRA_PROGRAM_ID —
+    /// any other program id is rejected before the instruction body runs.
+    #[account(
+        constraint = umbra_program.key() == UMBRA_PROGRAM_ID_PLACEHOLDER
+            @ PenumbraError::InvalidUmbraProgram
+    )]
     pub umbra_program: UncheckedAccount<'info>,
-
-    /// CHECK: Umbra-owned encrypted token account held by this schedule.
+ 
+    /// CHECK: must match the encrypted_balance_pda recorded on this
+    /// schedule at init time — prevents an attacker substituting a
+    /// different ETA to redirect the CPI disbursement.
+    #[account(
+        constraint = schedule_eta.key() == schedule.encrypted_balance_pda
+            @ PenumbraError::InvalidEta
+    )]
     pub schedule_eta: UncheckedAccount<'info>,
-
+ 
     /// CHECK: Umbra's mixer Merkle tree — passed through to the CPI.
+    /// Validated by Umbra's program internally on CPI entry; no
+    /// additional constraint needed on this side.
     pub umbra_mixer_tree: UncheckedAccount<'info>,
-
-    /// CHECK: buffer containing the Groth16 proof for this tranche.
+ 
+    /// CHECK: Groth16 proof buffer — contents verified by Umbra's ZK
+    /// verifier inside the CPI. No structural constraint possible here.
     pub zk_proof_buffer: UncheckedAccount<'info>,
 }
 
@@ -409,4 +421,8 @@ pub enum PenumbraError {
     InvalidWindow,
     #[msg("Unauthorized")]
     Unauthorized,
+    #[msg("umbra_program does not match the pinned UMBRA_PROGRAM_ID")]
+    InvalidUmbraProgram,
+    #[msg("schedule_eta does not match the encrypted_balance_pda stored on this schedule")]
+    InvalidEta,
 }
