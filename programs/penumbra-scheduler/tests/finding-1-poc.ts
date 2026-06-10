@@ -32,7 +32,7 @@
 
 import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
-import type { PenumbraScheduler } from "../target/types/penumbra_scheduler.js";
+import type { PenumbraScheduler } from "../target/types/penumbra_scheduler";
 import BN from "bn.js";
 import {
   Keypair,
