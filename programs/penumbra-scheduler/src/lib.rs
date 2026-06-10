@@ -88,6 +88,7 @@ pub mod penumbra_scheduler {
 
         let schedule = &mut ctx.accounts.schedule;
         schedule.authority = ctx.accounts.authority.key();
+        schedule.nonce = args.nonce;        
         schedule.recipient_stealth = args.recipient_stealth;
         schedule.token_mint = args.token_mint;
         schedule.cliff_ts = args.cliff_ts;
@@ -254,7 +255,15 @@ pub struct Tick<'info> {
     #[account(mut)]
     pub keeper: Signer<'info>,
 
-    #[account(mut)]
+    #[account(
+        mut,
+        seeds = [
+            b"vest",
+            schedule.authority.as_ref(),
+            &schedule.nonce.to_le_bytes(),
+        ],
+        bump = schedule.bump,
+    )]
     pub schedule: Account<'info, VestSchedule>,
 
     /// CHECK: verified against pinned UMBRA_PROGRAM_ID in the CPI
@@ -294,6 +303,7 @@ pub struct Attest<'info> {
 pub struct VestSchedule {
     pub authority: Pubkey,
     pub recipient_stealth: [u8; 32],
+    pub nonce: u64,           // <-- ADD: needed to re-derive PDA in tick/cancel
     pub token_mint: Pubkey,
     pub cliff_ts: i64,
     pub slope_seconds: u32,
@@ -307,7 +317,8 @@ pub struct VestSchedule {
 
 impl VestSchedule {
     /// 8 disc + 32 + 32 + 32 + 8 + 4 + 2 + 2 + 1 + 32 + 32 + 1 + slack
-    pub const SIZE: usize = 8 + 32 + 32 + 32 + 8 + 4 + 2 + 2 + 1 + 32 + 32 + 1 + 32;
+    // Added 8 bytes for nonce u64
+    pub const SIZE: usize = 8 + 32 + 8 + 32 + 32 + 8 + 4 + 2 + 2 + 1 + 32 + 32 + 1 + 32;
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Copy, PartialEq, Eq)]
