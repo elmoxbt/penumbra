@@ -164,7 +164,8 @@ pub mod penumbra_scheduler {
         //       },
         //   )?;
 
-        schedule.tranches_disbursed = should_post;
+        // Advance by exactly one — never jump to should_post directly.
+        schedule.tranches_disbursed = schedule.tranches_disbursed.saturating_add(1);
 
         if schedule.tranches_disbursed >= schedule.total_tranches {
             schedule.status = ScheduleStatus::Complete;
