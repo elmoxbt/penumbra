@@ -31,7 +31,7 @@
  *
  * How to run
  * ----------
- *   anchor test -- --grep "Finding 3"
+ *   anchor test -- --grep "finding-3"
  */
 
 import * as anchor from "@coral-xyz/anchor";
